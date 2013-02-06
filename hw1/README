@@ -1,0 +1,14 @@
+Question 1
+===
+
+I didn't notice any weird behavior however perhaps the questions is referring to the fact that the three child processes can't communicate so the values for P, T, and M are not updating. In my program I make them "fake" communicate.
+
+Question 2
+===
+
+I believe sleep() just pauses an individual process for a given number of seconds. This is bad because it doesnt prevent the CPU scheduler from running a different process thus making the sleep() unsynchronized. This is a problem because if the CPU scheduler switches to a different process for (let's say) 10sec then a 5sec sleep now becomes 15sec.
+
+Question 3
+===
+
+fflush() is used to flush user space buffers. If you didn't use it before a fork() then your child process could potentially receive the unwritten data from the parent which would then be potentially displayed in the child process.

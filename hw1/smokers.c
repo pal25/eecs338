@@ -63,7 +63,7 @@ void checked_wait(pid_t pid)
     perror("waitpid() failed");
     exit(WAIT_FAILURE);
   } else if (WEXITSTATUS(status) != 0) {
-    fprintf(stderr, "Smoker (pid %d) failed (%d)\n", pid, WEXITSTATUS(status));
+    fprintf(stderr, "Smoker (pid %d) failed (%d)\n\n", pid, WEXITSTATUS(status));
   }
 }
 
