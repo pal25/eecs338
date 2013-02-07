@@ -16,10 +16,11 @@
 
 #define BUFFER_SIZE 1024
 
-char* getbytes()
+char* getbytes(int fd)
 {
   char buffer[BUFFER_SIZE];
-  
+  FILE *stream = fdopen(fd, "r");
+ 
   size_t contentSize = 1;
   char *content = malloc(sizeof(char)*BUFFER_SIZE);
   content[0] = '\0';
@@ -29,7 +30,7 @@ char* getbytes()
     exit(ALLOC_ERROR);
   }
 
-  while(fgets(buffer, BUFFER_SIZE, stdin)) {
+  while(fgets(buffer, BUFFER_SIZE, stream)) {
     char* old = content;
     contentSize += strlen(buffer);
     content = realloc(content, contentSize);
@@ -89,27 +90,38 @@ void split(int *inpipe, int *outpipe)
 
 int main(int argc, char** argv)
 {
-  char *content = getbytes();
+  char *content = getbytes(STDIN_FD);
   printf("Content: %s\n", content);
 
   int len = strlen(content);
  
   if(len <= 1) {
     printf("Final level: %s\n", content);
+  } else {
+    char left[BUFFER_SIZE], right[BUFFER_SIZE];
+    strncpy(left, content, len/2);
+    strncpy(right, content + len/2, (len - len/2));
+    //printf("LEFT(LEN=%d): %s\n", strlen(left), left);
+    printf("RIGHT(LEN=%d): %s\n", strlen(right), right);
+
+    int linpipe[2], loutpipe[2];
+    split(linpipe, loutpipe);
+    write(linpipe[1], left, strlen(left));
+    close(linpipe[1]);
+   
+    /*    int rinpipe[2], routpipe[2];
+    split(rinpipe, routpipe);
+    write(rinpipe[1], right, strlen(right));
+    close(rinpipe[1]);*/
+
+    char* left_content = getbytes(loutpipe[0]);
+    write(STDOUT_FD, left_content, strlen(left_content));
+    close(loutpipe[0]);
+
+    //    char* right_content = getbytes(routpipe[0]);
+    //write(STDOUT_FD, right_content, strlen(right_content));
+    //close(loutpipe[0]);
+
   }
-
-  int linpipe[2], loutpipe[2];
-  split(linpipe, loutpipe);
-  write(linpipe[1], content, len);
-  close(linpipe[1]);
-  
-  int rinpipe[2], routpipe[2];
-  split(rinpipe, routpipe);
-  write(rinpipe[1], &content[len/2+1], (len-len/2));
-  close(rinpipe[1]);
-  
-
-  
-
   return 0;
 }

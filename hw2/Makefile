@@ -1,6 +1,6 @@
 FLAGS = -Wall -Werror -std=c99 -D_XOPEN_SOURCE=600
 SOURCE = sort.c
-OUTPUT = sort
+OUTPUT = sort output
 
 all: $(SOURCE)
 	$(CC) $(FLAGS) -o $(OUTPUT) $(SOURCE)
