@@ -9,6 +9,7 @@
 #define REALLOC_ERROR 2
 #define PIPE_ERROR 3
 #define FORK_ERROR 4
+#define EXEC_ERROR 5
 
 #define STDIN_FD 0
 #define STDOUT_FD 1
@@ -74,17 +75,18 @@ void split(int *inpipe, int *outpipe)
   if(child == 0) {
     printf("CHILD: %d\n", getpid());
 
-    dup2(inpipe[0], STDIN_FD);
-    dup2(outpipe[1], STDOUT_FD);
-    dup2(outpipe[1], STDERR_FD);
+    dup2(inpipe[0], STDIN_FD);   // Make sure the new proc can read
+    dup2(outpipe[1], STDOUT_FD); // Make sure the new proc can write
+    dup2(outpipe[1], STDERR_FD); // Just in case make sure new proc can err
     
-    close(inpipe[1]);
-    close(outpipe[0]);
+    close(inpipe[1]);  // Proc wont write to the inpipe
+    close(outpipe[0]); // Proc wont read from the outpipe
 
-    execl("./sort", "", (char*) NULL);
+    execl("./sort", "", (char*) NULL); 
+    exit(EXEC_ERROR);
   } else {
-    close(inpipe[0]);
-    close(outpipe[1]);
+    close(inpipe[0]);  // The parent wont read from inpipe
+    close(outpipe[1]); // Parent wont write from outpipe
   }
 }
 
@@ -92,36 +94,39 @@ int main(int argc, char** argv)
 {
   char *content = getbytes(STDIN_FD);
   printf("Content: %s\n", content);
-
   int len = strlen(content);
  
   if(len <= 1) {
-    printf("Final level: %s\n", content);
+    fprintf(stdin, "%s", content);
   } else {
     char left[BUFFER_SIZE], right[BUFFER_SIZE];
     strncpy(left, content, len/2);
+    left[len/2] = '\0';
     strncpy(right, content + len/2, (len - len/2));
-    //printf("LEFT(LEN=%d): %s\n", strlen(left), left);
-    printf("RIGHT(LEN=%d): %s\n", strlen(right), right);
+    printf("LEFT(LEN=%d): %s\n", strlen(left), left);
+    //printf("RIGHT(LEN=%d): %s\n", strlen(right), right);
 
     int linpipe[2], loutpipe[2];
     split(linpipe, loutpipe);
     write(linpipe[1], left, strlen(left));
     close(linpipe[1]);
    
-    /*    int rinpipe[2], routpipe[2];
-    split(rinpipe, routpipe);
-    write(rinpipe[1], right, strlen(right));
-    close(rinpipe[1]);*/
-
+    //int rinpipe[2], routpipe[2];
+    //split(rinpipe, routpipe);
+    //write(rinpipe[1], right, strlen(right));
+    //close(rinpipe[1]);
+    
     char* left_content = getbytes(loutpipe[0]);
-    write(STDOUT_FD, left_content, strlen(left_content));
     close(loutpipe[0]);
 
-    //    char* right_content = getbytes(routpipe[0]);
-    //write(STDOUT_FD, right_content, strlen(right_content));
-    //close(loutpipe[0]);
-
+    //char* right_content = getbytes(routpipe[0]);
+    // close(loutpipe[0]);
+    
+    char output[BUFFER_SIZE];
+    strcat(output, left_content);
+    //strcat(output, right_content);
+    write(STDOUT_FD, content, strlen(content));
   }
+
   return 0;
 }
