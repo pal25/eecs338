@@ -99,7 +99,6 @@ void merge(char *out, char *m1, char *m2)
   int out_ptr = 0;
 
   while(out_ptr < m1_len + m2_len) {
-    //printf("Out_ptr %d, m1_len %d, m2_len %d, m1[%d]:%c, m2[%d]:%c\n", out_ptr, m1_len, m2_len, m1_ptr, m1[m1_ptr], m2_ptr, m2[m2_ptr]);
     if(m1_ptr >= strlen(m1)) {
       out[out_ptr] = m2[m2_ptr];
       m2_ptr++;
@@ -135,12 +134,7 @@ void split_array(char* content, char* left, char* right)
 }
 
 int main(int argc, char** argv)
-{
-  
-  //char out[BUFFER_SIZE];
-  //merge(out, "aceg", "bdfh");
-  //printf("Merge: %s\n", out);
-  
+{  
   char *content = getbytes(STDIN_FD);
   int len = strlen(content);
  
