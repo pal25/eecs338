@@ -7,4 +7,4 @@ all: $(SOURCE)
 	chmod u+x $(OUTPUT)
 
 clean:
-	@rm -f $(OUTPUT) output
+	@rm -f $(OUTPUT) output debug
