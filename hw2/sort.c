@@ -44,10 +44,12 @@ char* getbytes(int fd)
     }
 
     strcat(content, buffer);
+    content = strtok(content, "\n");
   }
 
   return content;
 }
+
 
 void checked_pipe(int *pipefd)
 {
@@ -118,7 +120,7 @@ void merge(char *out, char *m1, char *m2)
   out[out_ptr] = '\0';
 
   FILE* dbg_fd = fopen("./debug", "a");
-  fprintf(dbg_fd, "Content(PID=%d): Left=%s, Right=%s, Merged=%s\n", getpid(), m1, m2, out);
+  fprintf(dbg_fd, "Merge Content(PID=%d): Left=%s, Right=%s, Merged=%s\n", getpid(), m1, m2, out);
   fclose(dbg_fd);
 
 }
@@ -130,42 +132,47 @@ void split_array(char* content, char* left, char* right)
   strncpy(left, content, len/2);
   left[len/2] = '\0';
   strncpy(right, content + len/2, len);
+
+  FILE* dbg_fd = fopen("./debug", "a");
+  fprintf(dbg_fd, "Split Content(PID=%d): Left=%s, Right=%s, Original=%s\n", getpid(), left, right, content);
+  fclose(dbg_fd);
    
 }
 
 int main(int argc, char** argv)
 {  
-  char *content = getbytes(STDIN_FD);
-  int len = strlen(content);
+  char *input = getbytes(STDIN_FD);
+  int len = strlen(input);
  
   if(len <= 1) {
     FILE* dbg_fd = fopen("./debug", "a");
-    fprintf(dbg_fd, "Content(PID=%d): %s\n", getpid(), content);
+    fprintf(dbg_fd, "Base Content(PID=%d): %s\n", getpid(), input);
     fclose(dbg_fd);
-    fprintf(stdout, "%s", content); //Send char back up the pipe
+    fprintf(stdout, "%s", input); //Send char back up the pipe
   } else {
     char left[BUFFER_SIZE], right[BUFFER_SIZE];
-    split_array(content, left, right);
+    split_array(input, left, right);
    
     int linpipe[2], loutpipe[2];
     split_workers(linpipe, loutpipe); // Create a new proc to send to
     write(linpipe[WRITE_END], left, strlen(left));
     close(linpipe[WRITE_END]);
+    char* left_content = getbytes(loutpipe[READ_END]);
+    close(loutpipe[READ_END]);
    
     int rinpipe[2], routpipe[2];
     split_workers(rinpipe, routpipe); // Create a new proc to send to
     write(rinpipe[WRITE_END], right, strlen(right));
     close(rinpipe[WRITE_END]);
-    
-    char* left_content = getbytes(loutpipe[READ_END]);
-    close(loutpipe[READ_END]);
-
     char* right_content = getbytes(routpipe[READ_END]);
     close(routpipe[READ_END]);
 
     char output[BUFFER_SIZE];
     merge(output, left_content, right_content);
-    write(STDOUT_FD, content, strlen(content));
+    FILE* dbg_fd = fopen("./debug", "a");
+    fprintf(dbg_fd, "Writing Content(PID=%d): %s\n", getpid(), output);
+    fclose(dbg_fd);    
+    fprintf(stdout, "%s", output);
   }
 
   return 0;
