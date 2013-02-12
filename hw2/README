@@ -1,0 +1,4 @@
+Question 1
+===
+
+There are a few reasons you wouldn't want to do this in such a way. For starters this solution of forking processes and piping data back and forth isn't scalable. There are a maximum number of pipes and if your data set was large you could potentially run out of channels. Also it's risky to use pipes in such a way because they could block indefinitely unless they are closed properly.
