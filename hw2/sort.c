@@ -44,7 +44,8 @@ char* getbytes(int fd)
     }
 
     strcat(content, buffer);
-    content = strtok(content, "\n");
+    if(content[strlen(content)-1] == '\n')
+      content[strlen(content)-1] = '\0';
   }
 
   return content;
@@ -78,7 +79,6 @@ void split_workers(int *inpipe, int *outpipe)
   if(child == 0) {
     dup2(inpipe[READ_END], STDIN_FD);   // Make sure the new proc can read
     dup2(outpipe[WRITE_END], STDOUT_FD); // Make sure the new proc can write
-    dup2(outpipe[WRITE_END], STDERR_FD); // Just in case make sure new proc can err
     
     close(inpipe[WRITE_END]);  // Proc wont write to the inpipe
     close(outpipe[READ_END]); // Proc wont read from the outpipe
@@ -102,27 +102,20 @@ void merge(char *out, char *m1, char *m2)
 
   while(out_ptr < m1_len + m2_len) {
     if(m1_ptr >= strlen(m1)) {
-      out[out_ptr] = m2[m2_ptr];
-      m2_ptr++;
+      out[out_ptr++] = m2[m2_ptr++];
     } else if (m2_ptr >= strlen(m2)) {
-      out[out_ptr] = m1[m1_ptr];
-      m1_ptr++;
+      out[out_ptr++] = m1[m1_ptr++];
     } else if(m1[m1_ptr] < m2[m2_ptr]) {
-      out[out_ptr] = m1[m1_ptr];
-      m1_ptr++;
+      out[out_ptr++] = m1[m1_ptr++];
     } else {
-      out[out_ptr] = m2[m2_ptr];
-      m2_ptr++;
+      out[out_ptr++] = m2[m2_ptr++];
     }
-    out_ptr++;
   }
 
   out[out_ptr] = '\0';
-
-  FILE* dbg_fd = fopen("./debug", "a");
-  fprintf(dbg_fd, "Merge Content(PID=%d): Left=%s, Right=%s, Merged=%s\n", getpid(), m1, m2, out);
-  fclose(dbg_fd);
-
+  #ifdef DEBUG
+  fprintf(stderr, "Merge Content(PID=%d): Left=%s, Right=%s, Merged=%s\n", getpid(), m1, m2, out);
+  #endif
 }
 
 void split_array(char* content, char* left, char* right)
@@ -133,9 +126,9 @@ void split_array(char* content, char* left, char* right)
   left[len/2] = '\0';
   strncpy(right, content + len/2, len);
 
-  FILE* dbg_fd = fopen("./debug", "a");
-  fprintf(dbg_fd, "Split Content(PID=%d): Left=%s, Right=%s, Original=%s\n", getpid(), left, right, content);
-  fclose(dbg_fd);
+  #ifdef DEBUG
+  fprintf(stderr, "Split Content(PID=%d): Left=%s, Right=%s, Original=%s\n", getpid(), left, right, content);
+  #endif
    
 }
 
@@ -145,9 +138,10 @@ int main(int argc, char** argv)
   int len = strlen(input);
  
   if(len <= 1) {
-    FILE* dbg_fd = fopen("./debug", "a");
-    fprintf(dbg_fd, "Base Content(PID=%d): %s\n", getpid(), input);
-    fclose(dbg_fd);
+    #ifdef DEBUG
+    fprintf(stderr, "Base Content(PID=%d): %s\n", getpid(), input);
+    #endif
+
     fprintf(stdout, "%s", input); //Send char back up the pipe
   } else {
     char left[BUFFER_SIZE], right[BUFFER_SIZE];
@@ -169,9 +163,11 @@ int main(int argc, char** argv)
 
     char output[BUFFER_SIZE];
     merge(output, left_content, right_content);
-    FILE* dbg_fd = fopen("./debug", "a");
-    fprintf(dbg_fd, "Writing Content(PID=%d): %s\n", getpid(), output);
-    fclose(dbg_fd);    
+    
+    #ifdef DEBUG
+    fprintf(stderr, "Writing Content(PID=%d): %s\n", getpid(), output);
+    #endif
+
     fprintf(stdout, "%s", output);
   }
 
