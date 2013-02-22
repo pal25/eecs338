@@ -1,0 +1,236 @@
+\documentclass[]{article}
+
+\title{Homework 3}
+\author{Patrick Landis (pal25)}
+\date{02/21/2013}
+\usepackage[margin=1in]{geometry}
+\usepackage{multicol}
+
+\begin{document}
+\maketitle
+
+\section*{Problem 1}
+integer hydroCount = oxyCount = bCount = 0 \\
+semaphore mutex(1), oxygen(0), hydrogen(0), barrier(0), bMutex(1)
+\begin{multicols}{2}
+\textbf{Hydrogen Processes}
+\begin{verbatim}
+wait(mutex)
+hydroCount = hydroCount + 1
+if hydroCount >= 2 and oxyCount >= 1:
+    hydroCount = hydroCount - 2
+    oxyCount = oxyCount - 1
+    signal(oxygen)
+    signal(hydrogen)
+    signal(hydrogen)
+else:
+    signal(mutex)
+endif
+
+wait(hydrogen)
+
+bond()
+
+wait(bMutex)
+bCount = bCount + 1
+if bCount == 3:
+    signal(barrier)
+endif
+signal(bMutex)
+
+wait(barrier)
+signal(barrier)
+\end{verbatim}
+
+\textbf{Oxygen Processes}
+\begin{verbatim}
+wait(mutex)
+if hydroCount >= 2:
+    hydroCount = hydroCount - 2
+    signal(oxygen)
+    signal(hydrogen)
+    signal(hydrogen)
+else:
+    oxyCount = oxyCount + 1
+    signal(mutex)
+endif
+
+wait(oxygen)
+
+bond()
+
+wait(bMutex)
+bCount = bCount + 1
+if bCount == 3:
+    signal(barrier)
+endif
+signal(bMutex)
+
+wait(barrier)
+signal(barrier)
+signal(mutex)
+\end{verbatim}
+\end{multicols}
+
+\textbf{How it works}: \\
+Both of the processes check the counts of atoms waiting to bond. If the amount of atoms is sufficient 
+then two hydrogen atoms are cleared and one oxygen atom is cleared. "`bond()"' is invoked which is a 
+function I'm assuming already exists. This is the first part. Note that the mutex is only signaled
+if we do not have enough atoms to bond, otherwise it stays locked so that we know which three atoms
+are in the process of bonding while all other atoms must wait at line 1.\\
+
+Before anymore atoms can bond we need to make sure that the three have finished "`bond()"'ing. This is
+done by creating another set of semaphores after "`bond()"'ing has occured. Essentially a count is kept
+and the bonded atoms can only leave iff all three have bonded. After all three atoms have bonded then
+the initial mutex is unlocked so the process can repeat for thre other lucky atoms.
+\newpage
+
+\section*{Problem 2}
+integer hydroCount = oxyCount = bCount = 0 \\
+semaphore mutex(1), oxygen(0), hydrogen(0), barrier(0), bMutex(1)
+\begin{multicols}{2}
+\textbf{Hydrogen Processes}
+\begin{verbatim}
+wait(mutex)
+hydroCount = hydroCount + 1
+if hydroCount >= 2 and oxyCount >= 1:
+    hydroCount = hydroCount - 2
+    oxyCount = oxyCount - 1
+    signal(oxygen)
+    signal(hydrogen)
+    signal(hydrogen)
+else:
+    signal(mutex)
+endif
+
+wait(hydrogen)
+
+bond()
+
+wait(bMutex)
+bCount = bCount + 1
+if bCount == 3:
+    signal(barrier)
+endif
+signal(bMutex)
+
+wait(barrier)
+signal(barrier)
+\end{verbatim}
+
+\textbf{Oxygen Processes}
+\begin{verbatim}
+wait(mutex)
+if hydroCount >= 2:
+    hydroCount = hydroCount - 2
+    signal(oxygen)
+    signal(hydrogen)
+    signal(hydrogen)
+else:
+    oxyCount = oxyCount + 1
+    signal(mutex)
+endif
+
+wait(oxygen)
+
+bond()
+
+wait(bMutex)
+bCount = bCount + 1
+if bCount == 3:
+    signal(barrier)
+endif
+signal(bMutex)
+
+wait(barrier)
+signal(barrier)
+signal(mutex)
+\end{verbatim}
+\end{multicols}
+
+\textbf{How it works}: \\
+Both of the processes check the counts of atoms waiting to bond. If the amount of atoms is sufficient 
+then two hydrogen atoms are cleared and one oxygen atom is cleared. "`bond()"' is invoked which is a 
+function I'm assuming already exists. This is the first part. Note that the mutex is only signaled
+if we do not have enough atoms to bond, otherwise it stays locked so that we know which three atoms
+are in the process of bonding while all other atoms must wait at line 1.\\
+
+Before anymore atoms can bond we need to make sure that the three have finished "`bond()"'ing. This is
+done by creating another set of semaphores after "`bond()"'ing has occured. Essentially a count is kept
+and the bonded atoms can only leave iff all three have bonded. After all three atoms have bonded then
+the initial mutex is unlocked so the process can repeat for thre other lucky atoms.
+\newpage
+
+\section*{Problem 3}
+integer leftCount = rightCount = 0 \\
+semaphore mutex(1), blockRight(1), blockLeft(1), leftCross(5), rightCross(5), turnstile(1)
+\begin{multicols}{2}
+\textbf{Left Entering Baboons}
+\begin{verbatim}
+wait(turnstile)
+wait(blockLeft)
+signal(blockLeft)
+
+wait(mutex)
+leftCount = leftCount + 1
+if leftCount == 1:
+    wait(blockRight)
+endif
+signal(mutex)
+signal(turnstile)
+
+wait(leftCross)
+cross()
+signal(leftCross)
+
+wait(mutex)
+leftCount = leftCount - 1
+if leftCount == 0:
+    signal(blockRight)
+signal(mutex)
+\end{verbatim}
+
+\textbf{Right Entering Baboons}
+\begin{verbatim}
+wait(turnstile)
+wait(blockRight)
+signal(blockRight)
+
+wait(mutex)
+rightCount = rightCount + 1
+if rightCount == 1:
+    wait(blockLeft)
+endif
+signal(mutex)
+signal(turnstile)
+
+wait(rightCross)
+cross()
+signal(rightCross)
+
+wait(mutex)
+rightCount = rightCount - 1
+if rightCount == 0:
+    signal(blockLeft)
+signal(mutex)
+\end{verbatim}
+\end{multicols}
+
+\textbf{How it works}: \\
+
+The turnstile semaphore is used to ensure that baboons do not starve. Essentially if we have baboons 
+going left then, without loss of generality, the turnstile will block once a baboon going right enters
+because blockRight will be blocking which is inside the turnstile block. Once this happens anymore
+left going baboons will be blocked at the turnstile thus forcing at least one right going baboon to
+have a chance of getting to the other side. \\
+
+The 5 max baboons is maintained by leftCross and rightCross, these semaphores will block if there are
+5 baboons in the process (pun intended) of crossing. \\
+
+Finally the ability to ensure baboons dont meet while crossing blockLeft anf blockRight are implemented.
+What they do is essentially block the opposite going baboons from entering after the first opposite
+going baboon has entered the "`cross()"'ing area. We check for the first left/right baboon and block until
+there are no more left/right baboons attempting to cross.
+
+\end{document}
+
