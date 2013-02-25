@@ -1,0 +1,142 @@
+\documentclass[]{article}
+
+\title{Homework 4}
+\author{Patrick Landis (pal25)}
+\date{02/23/2013}
+\usepackage[margin=1in]{geometry}
+\usepackage{multicol}
+
+\begin{document}
+\maketitle
+
+\section{H2O Bonding with Monitors}
+\subsection{Monitor}
+\begin{verbatim}
+type BondActivity = monitor
+    var counts: int[2]
+    var ready: condition[2]
+
+    procedure entry incCount(int i)
+    begin
+        counts[i]++
+    end
+    
+    procedure entry isReady(int i)
+    begin
+        if counts[0] >= 2 and counts[1] >=1
+            ready[0].signal
+   	        ready[(i+1)%2].signal
+   	        counts[0] -= 2
+   	        counts[1] -= 1
+        else
+            ready[i].wait
+        endif
+    end
+	
+    procedure entry incAndCheck(int i)
+        incCount(i)
+        isReady(i)
+    end
+	
+    begin
+        for i from 0:1
+            counts[i] = 0
+            ready[i] = 0
+    end 
+\end{verbatim}
+
+\begin{multicols}{2}
+\subsection{Hydrogen Processes}
+\begin{verbatim}
+var ba: BondActivity
+ba.incAndCheck(0)
+bond()
+\end{verbatim}
+
+\subsection{Oxygen Processes}
+\begin{verbatim}
+var ba: BondActivity
+ba.incAndCheck(1)
+bond()
+\end{verbatim}
+\end{multicols}
+
+\subsection{How It Works}
+Stuff
+\newpage
+
+\section{Baboon Crossing with CCR's}
+\begin{verbatim}
+var resources: shared record 
+    rCount, lCount, sCount: integer (init = 0)
+    inUseL, inUseR, starvingR, starvingL: boolean (init=false)
+\end{verbatim}
+    
+\begin{multicols}{2}
+\subsection{Baboon Going Left to Right}
+\begin{verbatim}
+region resources
+do begin
+    if(rCount > 0 && inUseL = true) {
+        starvingR = true
+    }
+    lCount ++
+end
+
+region resources 
+    when(inUseR == false &&
+         starvingR == false && 
+         sCount < 5) 
+begin
+    inUseL = true
+    sCount++
+end
+
+cross()
+
+region resources
+begin
+    sCount--
+    lCount--
+    if(sCount == 0) { inUseL = false }
+    if(lCount == 0) { starvingL = false }
+    endif
+end
+\end{verbatim}
+
+\subsection{Baboon Going Right to Left}
+\begin{verbatim}
+region resources
+do begin
+    if(lCount > 0 && inUseR = true) {
+        starvingL = true
+    }
+    rCount ++
+end
+
+region resources 
+    when(inUseL == false &&
+         starvingL == false && 
+         sCount < 5) 
+begin
+    inUseR = true
+    sCount++
+end
+
+cross()
+
+region resources
+begin
+    sCount--
+    rCount--
+    if(sCount == 0) { inUseR = false }
+    if(rCount == 0) { starvingR = false }
+    endif
+end
+\end{verbatim}
+\end{multicols}
+
+\subsection{How It Works}
+Stuff
+\end{document}
+
