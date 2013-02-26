@@ -16,16 +16,18 @@ type BondActivity = monitor
     var counts: int[2]
     var ready: condition[2]
 
+    // Procedure to increment the count of hydrogen or oxygen
     procedure entry incCount(int i)
     begin
         counts[i]++
     end
     
+    // Check if we are ready for bonding
     procedure entry isReady(int i)
     begin
         if counts[0] >= 2 and counts[1] >=1
             ready[0].signal
-   	        ready[(i+1)%2].signal
+   	        ready[(i+1)%2].signal // Signals the other process not currently in the monitor.
    	        counts[0] -= 2
    	        counts[1] -= 1
         else
@@ -33,6 +35,10 @@ type BondActivity = monitor
         endif
     end
 	
+    // This procedure is here to ensure that
+    // a process isnt scheduled out between
+    // incrementing the count and checking
+    // if a bond can happen.
     procedure entry incAndCheck(int i)
         incCount(i)
         isReady(i)
@@ -62,7 +68,14 @@ bond()
 \end{multicols}
 
 \subsection{How It Works}
-Stuff
+The monitor above makes the assumption that the monitors are
+using the "signal and continue" scheme to negotiate which
+process gets the monitor upon a signal. However I don't think
+that this solution is reliant on that fact, meaning that "signal
+and hold" would also work for the above code. In addition I'm
+assuming that there is some prewritten function "bond()" that
+actually does the bonding action. 
+
 \newpage
 
 \section{Baboon Crossing with CCR's}
@@ -137,6 +150,32 @@ end
 \end{multicols}
 
 \subsection{How It Works}
-Stuff
+\begin{enumerate}
+\item Assumptions: cross() is already implemented properly.
+
+\item First Section: This section makes sure that the opposite
+side is not starving. It does this by seeing if the opposite
+side's count is greater than 0 and that the current side is
+in use. In addition it also increments the count for the
+current side.
+
+\item Second Section: This section blocks if the following
+conditions are not met. First off the opposide side must not be
+in the process of crossing. Also the opposide side must not be
+starving, and finally there can be no more than 4 baboons on the
+crossing already. If these conditions are met then the current side's
+usage is set to true and we increment the count for the number
+of baboons currently crossing.
+
+\item Third Section: This section just calls "cross()" an 
+assumed function.
+
+\item Fourth Section: This section decrements the count of
+baboons on the bridge as well as decrements the count of the 
+current side's baboons waiting and/or crossing. Furthermore 
+is the current sides count is zero set the current sides usage
+flag to false. Finally if there are no current side crossing baboons
+set the starving flag to false.
+\end{enumerate}
 \end{document}
 
