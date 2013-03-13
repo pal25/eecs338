@@ -5,6 +5,7 @@
 #include <sys/types.h>
 
 #define KEY 25
+#define BUFFER 4096*10
 
 #define MUTEX 0
 #define OSEM 1
@@ -25,12 +26,12 @@ typedef struct {
     int barrierCount;
 } data_t;
 
-void semaphore_wait(int semaphore_id, unsigned short semaphore_key);
-void semaphore_signal(int semaphore_id, unsigned short semaphore_key);
+void semaphore_wait(int semaphore_offset, int semaphore_key);
+void semaphore_signal(int semaphore_offset, int semaphore_key);
 key_t generate_ipc_key();
 int semaphore_key(int semaphore_num); 
-void semaphore_initval(int semaphore_id, int semaphore_offset, int value);
-void semaphore_clear(int semaphore_id, int semaphore_offset);
+void semaphore_initval(int semaphore_offset, int semaphore_key, int value);
+void semaphore_clear(int semaphore_offset, int semaphore_key);
 
 int shared_memory_key(size_t memory_size);
 void* shared_memory_addr(int shm_key);
