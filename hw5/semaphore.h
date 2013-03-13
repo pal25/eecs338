@@ -4,7 +4,7 @@
 #include <sys/ipc.h>
 #include <sys/types.h>
 
-#define SEMKEY 25
+#define KEY 25
 
 #define WAIT_FAILURE 1
 #define SIGNAL_FAILURE 2
@@ -12,6 +12,13 @@
 #define IPC_FAILURE 4
 #define INIT_FAILURE 5
 #define CLEAR_FAILURE 6
+#define MAP_FAILURE 7
+
+typedef struct {
+    int hydrogenCount;
+    int oxygenCount;
+    int barrierCount;
+} data_t;
 
 void semaphore_wait(int semaphore_id, unsigned short semaphore_key);
 void semaphore_signal(int semaphore_id, unsigned short semaphore_key);
@@ -20,4 +27,7 @@ int semaphore_create(int semaphore_num);
 void semaphore_initval(int semaphore_id, int semaphore_offset, int value);
 void semaphore_clear(int semaphore_id, int semaphore_offset);
 
+int shared_memory_key(size_t memory_size);
+void* shared_memory_addr(int shm_key);
+void shared_memory_clear(int shm_key);
 #endif

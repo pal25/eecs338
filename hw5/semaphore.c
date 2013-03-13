@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
+#include <sys/shm.h>
 #include <sys/types.h>
 #include "semaphore.h"
 
@@ -31,7 +32,7 @@ void semaphore_signal(int semaphore_id, unsigned short semaphore_key)
 
 key_t generate_ipc_key()
 {
-    key_t ipc_key = ftok(__FILE__, SEMKEY);
+    key_t ipc_key = ftok(__FILE__, KEY);
      if(ipc_key < 0) {
 	perror("Failed to Generate IPC Key");
 	exit(IPC_FAILURE);
@@ -61,8 +62,38 @@ void semaphore_initval(int semaphore_id, int semaphore_offset, int value)
 
 void semaphore_clear(int semaphore_id, int semaphore_offset)
 {
-    if(semctl(semaphore_id, semaphore_offset, IPC_RMID, 0) == -1) {
+    if(semctl(semaphore_id, semaphore_offset, IPC_RMID, NULL) == -1) {
 	perror("Failed to Remove Semaphore");
+	exit(CLEAR_FAILURE);
+    }
+}
+
+int shared_memory_key(size_t memory_size)
+{
+    int shm_key = semget(generate_ipc_key(), memory_size, 0666|IPC_CREAT);
+    if(shm_key < 0) {
+	perror("Failed to Create Shared Memory Key");
+	exit(CREATE_FAILURE);
+    }
+    
+    return shm_key;
+}
+    
+void* shared_memory_addr(int shm_key)
+{
+    void* addr = shmat(shm_key, NULL, 0);
+    if((int*)addr < 0) {
+	perror("Failed to Map Shared Memory");
+	exit(MAP_FAILURE);
+    }
+    
+    return addr;
+}
+
+void shared_memory_clear(int shm_key)
+{
+    if(shmctl(shm_key, IPC_RMID, NULL) == -1) {
+	perror("Failed to Remove Shared Memory");
 	exit(CLEAR_FAILURE);
     }
 }
