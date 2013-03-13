@@ -41,7 +41,7 @@ key_t generate_ipc_key()
      return ipc_key;
 }
 
-int semaphore_create(int semaphore_num)
+int semaphore_key(int semaphore_num)
 {
     int semaphore_id = semget(generate_ipc_key(), semaphore_num, 0666|IPC_CREAT);
     if(semaphore_id < 0) {
