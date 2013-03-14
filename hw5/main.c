@@ -3,22 +3,29 @@
 #include <unistd.h>
 #include "semaphore.h"
 
+#include <stdio.h>
+
 int main(int argc, char** argv)
 {
     int sem_key = semaphore_key(4);
-    int shm_key = shared_memory_key(BUFFER);
+    int shm_key = shared_memory_create(sizeof(data_t));
+    printf("1\n");
     data_t* data = (data_t*)shared_memory_addr(shm_key);
+    printf("2\n");
 
     data->oxygenCount = 0;
     data->hydrogenCount = 0;
     data->barrierCount = 0;
+    printf("3\n");
 
     semaphore_initval(MUTEX, sem_key, 1);
     semaphore_initval(OSEM, sem_key, 0);
     semaphore_initval(HSEM, sem_key, 0);
     semaphore_initval(BSEM, sem_key, 1);
+    printf("4\n");
 
     pid_t pid1, pid2, pid3, pid4;
+    printf("5\n");
     
     if((pid1=fork()) == 0) {
 	execl("./oxygen", "", (char*) NULL);
@@ -29,6 +36,7 @@ int main(int argc, char** argv)
     } else if((pid4=fork()) == 0) {
 	execl("./oxygen", "", (char*) NULL);
     }
+    printf("6\n");
 
     wait(0);
     sleep(2);

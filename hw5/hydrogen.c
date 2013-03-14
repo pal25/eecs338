@@ -5,7 +5,7 @@
 int main(int argc, char** argv)
 {
     int sem_key = semaphore_key(4);
-    int shm_key = shared_memory_key(BUFFER);
+    int shm_key = shared_memory_key(sizeof(data_t));
 
     data_t* data = (data_t*)shared_memory_addr(shm_key);
 

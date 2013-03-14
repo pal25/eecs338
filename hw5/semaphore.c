@@ -35,10 +35,10 @@ void semaphore_signal(int semaphore_offset, int semaphore_key)
 
 key_t generate_ipc_key()
 {
-    key_t ipc_key = ftok(".", KEY);
-     if(ipc_key < 0) {
-	perror("Failed to Generate IPC Key");
-	exit(IPC_FAILURE);
+    key_t ipc_key = ftok(__FILE__, KEY);
+    if(ipc_key < 0) {
+    	perror("Failed to Generate IPC Key");
+    	exit(IPC_FAILURE);
     }
      
      return ipc_key;
@@ -46,7 +46,7 @@ key_t generate_ipc_key()
 
 int semaphore_key(int semaphore_num)
 {
-    int semaphore_id = semget(generate_ipc_key(), semaphore_num, 0666|IPC_CREAT);
+    int semaphore_id = semget(generate_ipc_key(), semaphore_num, IPC_CREAT | 0666);
     if(semaphore_id < 0) {
 	perror("Failed to Create Semaphore");
 	exit(CREATE_FAILURE);
@@ -71,12 +71,22 @@ void semaphore_clear(int semaphore_offset, int semaphore_key)
     }
 }
 
+int shared_memory_create(size_t memory_size)
+{
+    int shm_key = semget(generate_ipc_key(), memory_size, IPC_CREAT | 0666);
+    if(shm_key < 0) {
+	perror("Failed to Create Shared Memory Key");
+	exit(CREATE_FAILURE);
+    }
+    
+    return shm_key;
+}
+
 int shared_memory_key(size_t memory_size)
 {
-    int shm_key = semget(generate_ipc_key(), memory_size, 0666|IPC_CREAT);
+    int shm_key = semget(generate_ipc_key(), memory_size, 0666);
     if(shm_key < 0) {
-	printf("%d: %s\n", errno, strerror(errno));
-	perror("Failed to Create Shared Memory Key");
+	perror("Failed to Get Shared Memory Key");
 	exit(CREATE_FAILURE);
     }
     

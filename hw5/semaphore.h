@@ -4,8 +4,7 @@
 #include <sys/ipc.h>
 #include <sys/types.h>
 
-#define KEY 25
-#define BUFFER 4096*10
+#define KEY 'A'
 
 #define MUTEX 0
 #define OSEM 1
@@ -33,6 +32,7 @@ int semaphore_key(int semaphore_num);
 void semaphore_initval(int semaphore_offset, int semaphore_key, int value);
 void semaphore_clear(int semaphore_offset, int semaphore_key);
 
+int shared_memory_create(size_t memory_size);
 int shared_memory_key(size_t memory_size);
 void* shared_memory_addr(int shm_key);
 void shared_memory_clear(int shm_key);
