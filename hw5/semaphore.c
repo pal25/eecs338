@@ -73,7 +73,7 @@ void semaphore_clear(int semaphore_offset, int semaphore_key)
 
 int shared_memory_create(size_t memory_size)
 {
-    int shm_key = semget(generate_ipc_key(), memory_size, IPC_CREAT | 0666);
+    int shm_key = shmget(generate_ipc_key(), memory_size, IPC_CREAT | 0666);
     if(shm_key < 0) {
 	perror("Failed to Create Shared Memory Key");
 	exit(CREATE_FAILURE);
@@ -84,7 +84,7 @@ int shared_memory_create(size_t memory_size)
 
 int shared_memory_key(size_t memory_size)
 {
-    int shm_key = semget(generate_ipc_key(), memory_size, 0666);
+    int shm_key = shmget(generate_ipc_key(), memory_size, 0666);
     if(shm_key < 0) {
 	perror("Failed to Get Shared Memory Key");
 	exit(CREATE_FAILURE);
