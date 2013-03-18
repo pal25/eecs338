@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include "semaphore.h"
@@ -20,7 +21,7 @@ int main(int argc, char** argv)
     semaphore_initval(HSEM, sem_key, 0);
     semaphore_initval(BSEM, sem_key, 1);
 
-    pid_t pid1, pid2, pid3, pid4;
+    pid_t pid1, pid2, pid3, pid4, pid5;
     
     if((pid1=fork()) == 0) {
 	execl("./oxygen", "", (char*) NULL);
@@ -30,16 +31,15 @@ int main(int argc, char** argv)
 	execl("./hydrogen", "", (char*) NULL);
     } else if((pid4=fork()) == 0) {
 	execl("./oxygen", "", (char*) NULL);
+    } else if((pid5=fork()) ==0) {
+	execl("./oxygen", "", (char*) NULL);
     }
 
-    waitpid(pid4, 0 , 0);
-    sleep(2);
+    wait(NULL);
+    sleep(1);
     
-    semaphore_clear(MUTEX, sem_key);
-    semaphore_clear(OSEM, sem_key);
-    semaphore_clear(HSEM, sem_key);
-    semaphore_clear(BSEM, sem_key);
+    semaphore_clear(sem_key);
     shared_memory_clear(shm_key);
-    
+
     return 0;
 }

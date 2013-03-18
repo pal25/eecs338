@@ -18,6 +18,7 @@
 #define INIT_FAILURE 5
 #define CLEAR_FAILURE 6
 #define MAP_FAILURE 7
+#define INFINITE_WAIT 8
 
 typedef struct {
     int hydrogenCount;
@@ -30,7 +31,7 @@ void semaphore_signal(int semaphore_offset, int semaphore_key);
 key_t generate_ipc_key();
 int semaphore_key(int semaphore_num); 
 void semaphore_initval(int semaphore_offset, int semaphore_key, int value);
-void semaphore_clear(int semaphore_offset, int semaphore_key);
+void semaphore_clear(int semaphore_key);
 
 int shared_memory_create(size_t memory_size);
 int shared_memory_key(size_t memory_size);

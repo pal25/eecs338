@@ -5,6 +5,7 @@
 #include <sys/shm.h>
 #include <sys/types.h>
 #include "semaphore.h"
+#include <unistd.h>
 
 #include <string.h>
 #include <errno.h>
@@ -16,8 +17,13 @@ void semaphore_wait(int semaphore_offset, int semaphore_key)
     semaphore_buffer.sem_flg = 0;
     semaphore_buffer.sem_num = semaphore_offset;
     if(semop(semaphore_key, &semaphore_buffer, 1) < 0) {
-	perror("Failed to Wait");
-	exit(WAIT_FAILURE);
+	if(errno == EIDRM) {
+	    printf("Exiting process w/ PID: %d. Will never bond.\n", getpid());
+	    exit(INFINITE_WAIT);
+	} else {
+	    perror("Failed to Wait");
+	    exit(WAIT_FAILURE);
+	}
     }
 }
 
@@ -63,9 +69,9 @@ void semaphore_initval(int semaphore_offset, int semaphore_key, int value)
     }
 }
 
-void semaphore_clear(int semaphore_offset, int semaphore_key)
+void semaphore_clear(int semaphore_key)
 {
-    if(semctl(semaphore_key, semaphore_offset, IPC_RMID, NULL) == -1) {
+    if(semctl(semaphore_key, 0, IPC_RMID, NULL) == -1) {
 	perror("Failed to Remove Semaphore");
 	exit(CLEAR_FAILURE);
     }
