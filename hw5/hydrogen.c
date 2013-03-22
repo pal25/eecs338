@@ -2,6 +2,11 @@
 #include <unistd.h>
 #include "semaphore.h"
 
+/* This function runs an hydrogen process using SYS-V semaphores
+   and shared memory. See main.c to see how all shared segments
+   are initially generated. This program simply utilizes resources
+   already available.
+*/
 int main(int argc, char** argv)
 {
     int sem_key = semaphore_key(4);
@@ -29,7 +34,7 @@ int main(int argc, char** argv)
 	}
     }
    
-    printf("Bonding a Hydrogen! PID: %d\n", getpid());
+    printf("PID %d: Bonding a Hydrogen!\n", getpid());
     
     return 0;
 }
