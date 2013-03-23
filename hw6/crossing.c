@@ -5,9 +5,6 @@
 #include <sys/time.h>
 #include <time.h>
 
-#define A_NUM 1
-#define B_NUM 3
-
 #define THREAD_SHARED 0
 
 // Global Variables for Threads
@@ -16,9 +13,7 @@ int xingCount = 0;
 int xedCount = 0;
 int toAWaitCount = 0;
 int toBWaitCount = 0;
-int ids[A_NUM + B_NUM];
-
-
+int* ids;
 typedef enum {None, AtoB, BtoA} dir_t;
 dir_t xingDirection = None;
 
@@ -41,14 +36,16 @@ void printThreadInfo(char* status, char* type, void* id)
 {
     sem_wait(&print);
     time_t rawtime;
+    struct tm* timeinfo;
+    char buffer[80];
     time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    strftime(buffer, 80, "%H:%M:%S", timeinfo);
 
     int* val = (int*)id;
     
-    printf("Thread ID: %d\n", *val);
-    printf("Status: %s\n", status);
-    printf("Type: %s\n", type);
-    printf("Time: %s\n\n", ctime(&rawtime));
+    printf("%3d | %s | %s | %s\n", *val, type, buffer, status);
+
     sem_post(&print);
 }
 
@@ -169,7 +166,7 @@ void* b_to_a_cross(void* pthread_id)
 
     } else {
 	printThreadInfo("Condition Error", "B -> A", pthread_id);
-	exit(EXIT_FAILURE);
+      	exit(EXIT_FAILURE);
     }
 
     return NULL;
@@ -178,10 +175,24 @@ void* b_to_a_cross(void* pthread_id)
 
 int main(int argc, char** argv)
 {
-    pthread_t aBaboons[A_NUM];
-    pthread_t bBaboons[B_NUM];
+    int a_num = 0;
+    int b_num = 0
+	;
+    if(argc != 3) {
+	printf("Usage: ./crossing a_num b_num\n");
+	printf("a_num = Number of Baboons A -> B\n");
+	printf("b_num = Number of Baboons B -> A\n");
+	exit(EXIT_FAILURE);
+    } else {
+	a_num = atoi(argv[1]);
+	b_num = atoi(argv[2]);
+    }
+    
+    pthread_t aBaboons[a_num];
+    pthread_t bBaboons[b_num];
     pthread_attr_t attr;
-
+    ids = (int*)calloc(a_num+b_num, sizeof(int));
+    
     srandom(time(NULL));
     
     // Explicitly allow the threads to be joinable
@@ -194,8 +205,10 @@ int main(int argc, char** argv)
     sem_init(&toB, THREAD_SHARED, 0);
     sem_init(&print, THREAD_SHARED, 1);
 
+    printf("TID |  Type  |   Time   | Status \n");
+    
     // Create A->B Crossing Baboons
-    for(int i = 0; i < A_NUM; i++) {
+    for(int i = 0; i < a_num; i++) {
 	ids[i] = i;
 	if(pthread_create(&aBaboons[i], &attr, a_to_b_cross, (void*)&ids[i]) == -1) {
 	    perror("Thread Creation Error: A");
@@ -204,9 +217,9 @@ int main(int argc, char** argv)
     }
 
     // Create B->A Crossing Baboons
-    for(int i = 0; i < B_NUM; i++) {
-	ids[A_NUM+i] = i;
-	if(pthread_create(&bBaboons[i], &attr, b_to_a_cross, (void*)&ids[A_NUM+i]) == -1) {
+    for(int i = 0; i < b_num; i++) {
+	ids[a_num+i] = a_num + i;
+	if(pthread_create(&bBaboons[i], &attr, b_to_a_cross, (void*)&ids[a_num+i]) == -1) {
 	    perror("Thread Creation Error: B");
 	    exit(EXIT_FAILURE);
 	}
@@ -215,7 +228,7 @@ int main(int argc, char** argv)
     void* status;
 
     // Join A Crossing Baboons
-    for(int i = 0; i < A_NUM; i++) {
+    for(int i = 0; i < a_num; i++) {
 	if(pthread_join(aBaboons[i], &status) == -1) {
 	    perror("Thread Join Error: A");
 	    exit(EXIT_FAILURE);
@@ -223,13 +236,14 @@ int main(int argc, char** argv)
     }
 
     // Join B Crossing Baboons
-    for(int i = 0; i < B_NUM; i++) {
+    for(int i = 0; i < b_num; i++) {
 	if(pthread_join(bBaboons[i], &status) == -1) {
 	    perror("Thread Join Error: B");
 	    exit(EXIT_FAILURE);
 	}
     }
-    
+
+    free(ids);
     return 0;
 }
 
