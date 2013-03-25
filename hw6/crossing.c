@@ -52,8 +52,9 @@ void printThreadInfo(char* status, char* type, void* id)
 
 void* a_to_b_cross(void* pthread_id)
 {
-    printThreadInfo("About to sleep before starting", "A -> B", pthread_id);
+    printThreadInfo("Dont Want to Cross Yet", "A -> B", pthread_id);
     thread_sleep(1000);
+    printThreadInfo("Wants to Cross ", "A -> B", pthread_id);
     
     sem_wait(&mutex);
     if((xingDirection == AtoB || xingDirection == None) && xingCount < 5 && (xedCount + xingCount) < 10) {
@@ -61,6 +62,7 @@ void* a_to_b_cross(void* pthread_id)
 	xingCount++;
 	sem_post(&mutex);
     } else {
+	printThreadInfo("Waiting to Cross", "A -> B", pthread_id);
 	toBWaitCount++;
 	sem_post(&mutex);
 	sem_wait(&toB);
@@ -83,7 +85,7 @@ void* a_to_b_cross(void* pthread_id)
 
 	sem_post(&mutex);
 	
-    } else if(xingCount > 0 && xingCount <= 4 &&
+    } else if(xingCount >= 0 && xingCount <= 4 && // Bug fix: >= 0 instead of > 0
 	      (((xedCount+xingCount) < 10 && toBWaitCount !=0) ||
 	       ((xedCount+xingCount) >= 10 && toAWaitCount == 0 && toBWaitCount != 0))) {
 
@@ -113,15 +115,17 @@ void* a_to_b_cross(void* pthread_id)
 
 void* b_to_a_cross(void* pthread_id)
 {
-    printThreadInfo("About to sleep before starting", "B -> A", pthread_id);
+    printThreadInfo("Dont Want to Cross Yet", "B -> A", pthread_id);
     thread_sleep(1000);
-    
+    printThreadInfo("Wants to Cross ", "B -> A", pthread_id);
+        
     sem_wait(&mutex);
     if((xingDirection == BtoA || xingDirection == None) && xingCount < 5 && (xedCount + xingCount) < 10) {
 	xingDirection = BtoA;
 	xingCount++;
 	sem_post(&mutex);
     } else {
+	printThreadInfo("Waiting to Cross", "B -> A", pthread_id);
 	toAWaitCount++;
 	sem_post(&mutex);
 	sem_wait(&toA);
@@ -144,7 +148,7 @@ void* b_to_a_cross(void* pthread_id)
 
 	sem_post(&mutex);
 	
-    } else if(xingCount > 0 && xingCount <= 4 &&
+    } else if(xingCount >= 0 && xingCount <= 4 && // Bug fix: >= 0 instead of > 0
 	      (((xedCount+xingCount) < 10 && toAWaitCount !=0) ||
 	       ((xedCount+xingCount) >= 10 && toBWaitCount == 0 && toAWaitCount != 0))) {
 
