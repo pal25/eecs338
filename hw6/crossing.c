@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <time.h>
+#include <unistd.h>
 
 #define THREAD_SHARED 0
 
@@ -21,11 +22,8 @@ dir_t xingDirection = None;
 // Function to sleep for a random amount of millisecs
 void thread_sleep(int max_in_ms)
 {
-    struct timespec time_ns;
-    int duration = random() % max_in_ms + 1;
-    time_ns.tv_sec = 0;
-    time_ns.tv_nsec = duration * 1000000;
-    if(nanosleep(&time_ns, NULL) != 0) {
+    useconds_t duration = (random() % max_in_ms + 1) * 1000;
+    if(usleep(duration) != 0) {
 	perror("Sleep Error");
 	exit(EXIT_FAILURE);
     }	
@@ -37,14 +35,17 @@ void printThreadInfo(char* status, char* type, void* id)
     sem_wait(&print);
     time_t rawtime;
     struct tm* timeinfo;
-    char buffer[80];
+    char buffer1[80];
     time(&rawtime);
     timeinfo = localtime(&rawtime);
-    strftime(buffer, 80, "%H:%M:%S", timeinfo);
+    strftime(buffer1, 80, "%H:%M:%S", timeinfo);
 
     int* val = (int*)id;
+
+    char buffer2[256];
+    sprintf(buffer2, "%s (xingCount=%d, xedCount=%d)", status, xingCount, xedCount);
     
-    printf("%3d | %s | %s | %s\n", *val, type, buffer, status);
+    printf("%3d | %s | %s | %s\n", *val, type, buffer1, buffer2);
 
     sem_post(&print);
 }
@@ -58,6 +59,7 @@ void* a_to_b_cross(void* pthread_id)
     
     sem_wait(&mutex);
     if((xingDirection == AtoB || xingDirection == None) && xingCount < 5 && (xedCount + xingCount) < 10) {
+	printThreadInfo("Can Cross", "A -> B", pthread_id);
 	xingDirection = AtoB;
 	xingCount++;
 	sem_post(&mutex);
@@ -79,36 +81,20 @@ void* a_to_b_cross(void* pthread_id)
     sem_wait(&mutex);
     xedCount++;
     xingCount--;
-    if(xingCount > 0 && xingCount <= 4 &&
-       (((xedCount+xingCount) < 10 && toBWaitCount == 0) ||
-	((xedCount+xingCount) >= 10 && toAWaitCount != 0))) {
-
-	sem_post(&mutex);
-	
-    } else if(xingCount >= 0 && xingCount <= 4 && // Bug fix: >= 0 instead of > 0
-	      (((xedCount+xingCount) < 10 && toBWaitCount !=0) ||
-	       ((xedCount+xingCount) >= 10 && toAWaitCount == 0 && toBWaitCount != 0))) {
-
+    if(toBWaitCount != 0 && (((xedCount+xingCount)<10) || ((xedCount+xingCount) >= 10 && toAWaitCount == 0))) {
 	sem_post(&toB);
-
-    } else if((xingCount == 0 && (((xedCount+xingCount) < 10 &&
-				   toBWaitCount == 0 && toAWaitCount != 0) ||
-				  ((xedCount+xingCount) >= 10 && toAWaitCount != 0)))) {
-
+    } else if(xingCount == 0 && toAWaitCount != 0 && (toBWaitCount == 0 || (xedCount + xingCount) >= 10)) {
 	xingDirection = BtoA;
 	xedCount = 0;
 	sem_post(&toA);
-
     } else if(xingCount == 0 && toBWaitCount == 0 && toAWaitCount == 0) {
-
 	xingDirection = None;
 	xedCount = 0;
 	sem_post(&mutex);
-
     } else {
-	printThreadInfo("Condition Error", "A -> B", pthread_id);
-	exit(EXIT_FAILURE);
+	sem_post(&mutex);
     }
+    
     return NULL;
 }
 
@@ -121,6 +107,7 @@ void* b_to_a_cross(void* pthread_id)
         
     sem_wait(&mutex);
     if((xingDirection == BtoA || xingDirection == None) && xingCount < 5 && (xedCount + xingCount) < 10) {
+	printThreadInfo("Can Cross", "B -> A", pthread_id);
 	xingDirection = BtoA;
 	xingCount++;
 	sem_post(&mutex);
@@ -142,35 +129,18 @@ void* b_to_a_cross(void* pthread_id)
     sem_wait(&mutex);
     xedCount++;
     xingCount--;
-    if(xingCount > 0 && xingCount <= 4 &&
-       (((xedCount+xingCount) < 10 && toAWaitCount == 0) ||
-	((xedCount+xingCount) >= 10 && toBWaitCount != 0))) {
-
-	sem_post(&mutex);
-	
-    } else if(xingCount >= 0 && xingCount <= 4 && // Bug fix: >= 0 instead of > 0
-	      (((xedCount+xingCount) < 10 && toAWaitCount !=0) ||
-	       ((xedCount+xingCount) >= 10 && toBWaitCount == 0 && toAWaitCount != 0))) {
-
+    if(toAWaitCount != 0 && (((xedCount+xingCount)<10) || ((xedCount+xingCount) >= 10 && toBWaitCount == 0))) {
 	sem_post(&toA);
-
-    } else if((xingCount == 0 && (((xedCount+xingCount) < 10 &&
-				   toAWaitCount == 0 && toBWaitCount != 0) ||
-				  ((xedCount+xingCount) >= 10 && toBWaitCount != 0)))) {
-
+    } else if(xingCount == 0 && toBWaitCount != 0 && (toAWaitCount == 0 || (xedCount + xingCount) >= 10)) {
 	xingDirection = AtoB;
 	xedCount = 0;
 	sem_post(&toB);
-
     } else if(xingCount == 0 && toAWaitCount == 0 && toBWaitCount == 0) {
-
 	xingDirection = None;
 	xedCount = 0;
 	sem_post(&mutex);
-
     } else {
-	printThreadInfo("Condition Error", "B -> A", pthread_id);
-      	exit(EXIT_FAILURE);
+	sem_post(&mutex);
     }
 
     return NULL;
