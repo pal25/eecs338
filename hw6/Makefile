@@ -2,8 +2,8 @@ CFLAGS = -Wall -Werror -std=gnu99 -pthread
 
 all: crossing
 
-debug: my_crossing.c
-	gcc $(CFLAGS) -g my_crossing.c -o crossing
+debug: crossing.c
+	gcc $(CFLAGS) -g crossing.c -o crossing
 
 crossing: crossing.c
 	gcc $(CFLAGS) crossing.c -o crossing
