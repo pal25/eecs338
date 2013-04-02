@@ -8,7 +8,7 @@
 
 #define THREAD_SHARED 0
 
-// Global Variables for Threads
+// Global Variables for pthreads
 sem_t mutex, toB, toA, print;
 int xingCount = 0;
 int xedCount = 0;
@@ -19,8 +19,15 @@ typedef enum {None, AtoB, BtoA} dir_t;
 dir_t xingDirection = None;
 
 
-// Function to sleep for a random amount of millisecs
-void thread_sleep(int max_in_ms)
+/* Function to sleep for a random amount of ms on range [0, max_in_ms).
+
+   NOTE: This function is not thread-safe however it doesn't really
+         matter much for this purpose. We just want to sleep for a
+	 "seemingly random" amount of time.
+
+   @input unsigned int max_in_ms: The max amount of time to sleep in millisecs
+*/
+void thread_sleep(unsigned int max_in_ms)
 {
     useconds_t duration = (random() % max_in_ms + 1) * 1000;
     if(usleep(duration) != 0) {
@@ -29,7 +36,16 @@ void thread_sleep(int max_in_ms)
     }	
 }
 
+/* This function takes a status, a thread type, and a thread id.
+   It then pretty prints out this information time-stampped.
 
+   @input char* status: The status message to display
+   @input char* type: The type of thread, for our purposed "A->B" or "B->A"
+   @input void* id: A numerical id that should be type cast to int*, it is
+                    void* by default because that is that the defualt
+		    pthreads use as arguments.
+
+*/
 void printThreadInfo(char* status, char* type, void* id)
 {
     sem_wait(&print);
@@ -50,7 +66,15 @@ void printThreadInfo(char* status, char* type, void* id)
     sem_post(&print);
 }
 
+/* This function handles the logic involved with A->B threads crossing.
+   This function is one of two functions that the threads run. The other
+   function is a mirrored version of this function named "b_to_a_cross()"
+   which has almost indentical functionality.
 
+   @input void* pthread_id: A void* cast of int* that contains the "thread id"
+                            to the thread invoking this function.
+
+*/
 void* a_to_b_cross(void* pthread_id)
 {
     printThreadInfo("Dont Want to Cross Yet", "A -> B", pthread_id);
@@ -98,7 +122,15 @@ void* a_to_b_cross(void* pthread_id)
     return NULL;
 }
 
+/* This function handles the logic involved with B->A threads crossing.
+   This function is one of two functions that the threads run. The other
+   function is a mirrored version of this function named "a_to_b_cross()"
+   which has almost indentical functionality.
 
+   @input void* pthread_id: A void* cast of int* that contains the "thread id"
+                            to the thread invoking this function.
+
+*/
 void* b_to_a_cross(void* pthread_id)
 {
     printThreadInfo("Dont Want to Cross Yet", "B -> A", pthread_id);
@@ -146,12 +178,22 @@ void* b_to_a_cross(void* pthread_id)
     return NULL;
 }
 
+/* MAIN FUNCTION
+   This function is responsible for a few things:
+   1.) Parsing command line arguments to make sure that the input is properly sanatized
+   2.) Initializing semaphores and the default values for pthreads used.
+   3.) Starting the appropriate pthreads
+   4.) Joining the appropriate pthreads when they are done.
+   5.) Freeing any allocated memory still left.
 
+   @input int: Command line argument for number of A->B threads to start
+   @input int: Command line argument for number of B->A threads to start
+   
+*/
 int main(int argc, char** argv)
 {
     int a_num = 0;
-    int b_num = 0
-	;
+    int b_num = 0;
     if(argc != 3) {
 	printf("Usage: ./crossing a_num b_num\n");
 	printf("a_num = Number of Baboons A -> B\n");
@@ -161,7 +203,8 @@ int main(int argc, char** argv)
 	a_num = atoi(argv[1]);
 	b_num = atoi(argv[2]);
     }
-    
+
+    // Create the pthread arrays, attrs, and ids
     pthread_t aBaboons[a_num];
     pthread_t bBaboons[b_num];
     pthread_attr_t attr;
