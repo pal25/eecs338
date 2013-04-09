@@ -23,9 +23,9 @@ int check_and_request(int* value, data* msg, CLIENT* clnt)
     }
 }
 
-data *msg_setup(int type, int amount)
+data* msg_setup(int type, int amount)
 {
-    data* msg;
+    data* msg = (data*) malloc(sizeof(data));
     msg->supply_type = type;
     msg->supply_amount = amount;
     msg->smoker = (int) getpid();
@@ -58,17 +58,21 @@ CLIENT *clnt_create_checked(char* host, unsigned long program, unsigned long ver
 int main(int argc, char** argv)
 {
     char* host;
-    if(argc < 2) {
-	printf("Usage: %s server_host\n", argv[0]);
+    int p_amt, t_amt, m_amt;
+    if(argc < 5) {
+	printf("Usage: %s server_host p_req_amt t_req_amt m_req_amt\n", argv[0]);
 	exit(EXIT_FAILURE);
     } else {
 	host = argv[1];
+	p_amt = atoi(argv[2]);
+	t_amt = atoi(argv[3]);
+	m_amt = atoi(argv[4]);
     }
     
     CLIENT* clnt = clnt_create_checked(host, SMOKE, AS7, "udp");
-    data* paper_msg = msg_setup(PAPER, 1);
-    data* tobacco_msg = msg_setup(TOBACCO, 1);
-    data* matches_msg = msg_setup(MATCHES, 1);
+    data* paper_msg = msg_setup(PAPER, p_amt);
+    data* tobacco_msg = msg_setup(TOBACCO, t_amt);
+    data* matches_msg = msg_setup(MATCHES, m_amt);
 
     int resources_available = 1;
     while(resources_available) {

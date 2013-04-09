@@ -1,9 +1,9 @@
 #include <rpc/rpc.h>
 #include "Smoking.h"
 
-static int paper = 10;
-static int matches = 10;
-static int tobacco = 10;
+static int paper = 100;
+static int matches = 100;
+static int tobacco = 100;
 
 static int result;
 
@@ -33,12 +33,18 @@ int* get_me_my_supply_1(data* msg, CLIENT* client)
     }
 
     result = check_and_decrement(value, msg->supply_amount);
+    printf("Remaining: P=%d, T=%d, M=%d\n", paper, tobacco, matches);
     return &result;
 }
 
 int* get_me_my_supply_1_svc(data* msg, struct svc_req *req)
 {
     CLIENT* client = NULL;
-    printf("Getting request from PID=%d\n", msg->smoker);
+    printf("Request: PID=%d, Type=%d, Amount=%d\n", msg->smoker, msg->supply_type, msg->supply_amount);
+
+    if(paper == 0 && tobacco == 0 && matches ==0) {
+	printf("No more resources...\n");
+    }
+    
     return get_me_my_supply_1(msg, client);
 }
